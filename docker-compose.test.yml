@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: api
+    environment:
+      MONGO_HOST_TEST: mongodb://mongo
+      NODE_ENV: production
+    networks:
+      - internal
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:4.1.8-xenial
+    container_name: mongo
+    restart: unless-stopped
+    networks:
+      - internal
+    volumes:
+      - dbdata:/data/db
+    logging:
+      driver: none 
+
+networks:
+  internal:
+
+volumes:
+  dbdata:
