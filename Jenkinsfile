@@ -13,6 +13,13 @@ def getCommitId() {
   return readFile(".git/commit-id").trim()
 }
 
+
+def getDurationInSeconds(long startTime, long endTime) {
+  long diff = endTime - startTime
+  diff /= 1000 
+  return diff
+}
+
 def updateGithubCommitStatus(String context, String state, String message) {
   repoUrl = getRepoURL()
   commitSha = getCommitSha()
@@ -33,14 +40,19 @@ def updateGithubCommitStatus(String context, String state, String message) {
 
 pipeline {
   agent any
-
-  stages {
+stages {
     stage('Build Testing environment') {
       steps {
         script {
           try {
+            updateGithubCommitStatus("Jenkins CI - Build Status", 'PENDING', "The Jenkins CI build is in progress")
+            def startTime = new Date()   
+
             sh 'npm run docker:build_test'
-            updateGithubCommitStatus("Jenkins CI - Build Status", 'SUCCESS', "Build Passed")
+
+            def stopTime = new Date()
+            long duration = getDurationInSeconds(startTime.getTime(), stopTime.getTime() ) 
+            updateGithubCommitStatus("Jenkins CI - Build Status", 'SUCCESS', "Build Passed in " + duration + " sec")
 
           } catch (Exception e) {
             updateGithubCommitStatus("Jenkins CI - Build Status", 'FAILURE', "Build Failed")
@@ -54,8 +66,14 @@ pipeline {
       steps {
         script {
           try {
+            updateGithubCommitStatus("Jenkins CI - Tests Status", 'PENDING', "The Jenkins CI test is in progress")
+            def startTime = new Date()   
+
             sh 'npm run docker:run_test'
-            updateGithubCommitStatus("Jenkins CI - Tests Status", 'SUCCESS', "Tests Passed")
+
+            def stopTime = new Date()
+            long duration = getDurationInSeconds(startTime.getTime(), stopTime.getTime() ) 
+            updateGithubCommitStatus("Jenkins CI - Tests Status", 'SUCCESS', "Tests Passed in " + duration  + " sec")
           } catch (Exception e) {
             updateGithubCommitStatus("Jenkins CI - Tests Status", 'FAILURE', "Tests Failed")
             throw e
@@ -63,5 +81,4 @@ pipeline {
         }
       }
     }
-  }
 }
