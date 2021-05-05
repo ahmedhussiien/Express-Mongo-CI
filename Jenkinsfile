@@ -107,5 +107,26 @@ pipeline {
       }
     }
 
+    stage('Deploy') {
+      steps {
+        script {
+            try {
+              updateGithubCommitStatus("Jenkins CI - Deployment Status", 'PENDING', "The Jenkins CI deployment is in progress")
+              def startTime = new Date()  
+
+              sshagent(credentials : ['Prod-SSH']) {
+                  sh 'ssh ${DEPLOY_SERVER_USER}@${DEPLOY_SERVER_DNS} "~/scripts/deploy.sh"'
+              }
+
+              def stopTime = new Date()
+              long duration = getDurationInSeconds(startTime.getTime(), stopTime.getTime() ) 
+              updateGithubCommitStatus("Jenkins CI - Deployment Status", 'SUCCESS', "Deployment Succeeded in " + duration  + " sec")
+            } catch (Exception e) {
+              updateGithubCommitStatus("Jenkins CI - Deployment Status", 'FAILURE', "Deployment Failed")
+              throw e
+            }
+        }
+      }
+    }
   }
 }
