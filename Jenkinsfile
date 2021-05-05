@@ -13,7 +13,6 @@ def getCommitId() {
   return readFile(".git/commit-id").trim()
 }
 
-
 def getDurationInSeconds(long startTime, long endTime) {
   long diff = endTime - startTime
   diff /= 1000 
@@ -40,7 +39,8 @@ def updateGithubCommitStatus(String context, String state, String message) {
 
 pipeline {
   agent any
-stages {
+
+  stages {
     stage('Build Testing environment') {
       steps {
         script {
@@ -81,4 +81,31 @@ stages {
         }
       }
     }
+
+    stage('Docker Production Build & Push') {
+      steps {
+        script {
+          try {
+            updateGithubCommitStatus("Jenkins CI - Packaging Status", 'PENDING', "The Jenkins CI build is in progress")
+            def startTime = new Date()  
+
+            def commit_id = getCommitId()
+            docker.withRegistry('https://ghcr.io/ahmedhussiien/flickr-backend', 'ghcr') {
+              def app = docker.build("ghcr.io/ahmedhussiien/flickr-backend", '.')
+              app.push("${commit_id}")
+              app.push("latest")
+            }
+
+            def stopTime = new Date()
+            long duration = getDurationInSeconds(startTime.getTime(), stopTime.getTime() ) 
+            updateGithubCommitStatus("Jenkins CI - Packaging Status", 'SUCCESS', "Packaging Succeeded in " + duration  + " sec")
+          } catch (Exception e) {
+            updateGithubCommitStatus("Jenkins CI - Packaging Status", 'FAILURE', "Packaging Failed")
+            throw e
+          }
+        }
+      }
+    }
+
+  }
 }
