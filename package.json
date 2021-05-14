@@ -5,11 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "jest --verbose",
-    "docker:build_test": "docker-compose -f docker-compose.test.yml build",
-    "docker:post_run_test": "docker-compose -f docker-compose.test.yml down",
-    "docker:run_test": "docker-compose -f docker-compose.test.yml up --exit-code-from api --abort-on-container-exit && npm run docker:post_run_test",
-    "docker:test": "npm run docker:build_test && npm run docker:run_test"
+    "test": "jest --verbose"
   },
   "author": "",
   "license": "ISC",
